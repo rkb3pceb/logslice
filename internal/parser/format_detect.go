@@ -36,3 +36,20 @@ func DetectFormatFromReader(r io.Reader) (format string, sample []string, err er
 	}
 	return "", sample, nil
 }
+
+// DetectFormatFromLines attempts to detect the timestamp format from a slice
+// of log lines. It iterates through the provided lines and returns the first
+// recognisable format string (compatible with time.Parse), or an empty string
+// if none is found. This is useful when lines have already been read into
+// memory and a separate reader is not available.
+func DetectFormatFromLines(lines []string) string {
+	for _, line := range lines {
+		if strings.TrimSpace(line) == "" {
+			continue
+		}
+		if f := DetectFormat(line); f != "" {
+			return f
+		}
+	}
+	return ""
+}
