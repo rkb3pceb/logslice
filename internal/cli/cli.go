@@ -50,6 +50,9 @@ func Run(args []string, in io.Reader, out io.Writer, errOut io.Writer) error {
 		if err != nil {
 			return fmt.Errorf("invalid --to: %w", err)
 		}
+		if to.Before(from) {
+			return errors.New("--to must not be before --from")
+		}
 	}
 
 	var r io.Reader = in
