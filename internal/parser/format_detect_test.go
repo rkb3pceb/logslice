@@ -80,3 +80,17 @@ func TestDetectFormatFromReader_NoTimestamp(t *testing.T) {
 		t.Fatalf("expected empty format for unrecognised input, got %q", format)
 	}
 }
+
+func TestDetectFormatFromReader_SingleLine(t *testing.T) {
+	input := strings.NewReader("2024-01-15T10:00:00Z ERROR something failed\n")
+	format, sample, err := DetectFormatFromReader(input)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if format == "" {
+		t.Fatal("expected a format to be detected for single-line input, got empty string")
+	}
+	if len(sample) != 1 {
+		t.Fatalf("expected 1 sample line, got %d", len(sample))
+	}
+}
