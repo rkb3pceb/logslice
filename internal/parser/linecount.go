@@ -1,3 +1,5 @@
+// Package parser provides utilities for parsing and detecting timestamp
+// formats in structured log files.
 package parser
 
 import (
@@ -6,49 +8,40 @@ import (
 	"strings"
 )
 
-// LineCountResult holds the result of counting lines in a log file.
-type LineCountResult struct {
-	// Total is the total number of lines scanned.
+// LineStats holds summary information about a scanned log file.
+type LineStats struct {
+	// Total is the total number of lines (including blank lines).
 	Total int
-	// Matched is the number of lines that contain a parseable timestamp.
-	Matched int
+	// Timestamped is the number of lines that contain a parseable timestamp.
+	Timestamped int
 	// Blank is the number of blank or whitespace-only lines.
 	Blank int
 }
 
-// CountLines scans r using the provided format string and returns a
-// LineCountResult describing the composition of the log data.
-// If format is empty, CountLines returns an error.
-func CountLines(r io.Reader, format string) (LineCountResult, error) {
-	if format == "" {
-		return LineCountResult{}, ErrNoFormat
-	}
-
-	var result LineCountResult
+// CountLines scans r and returns statistics about line composition.
+// format is the timestamp format string used to test each line; if format is
+// empty every non-blank line is counted as non-timestamped.
+func CountLines(r io.Reader, format string) (LineStats, error) {
+	var stats LineStats
 	scanner := bufio.NewScanner(r)
 	for scanner.Scan() {
 		line := scanner.Text()
-		result.Total++
+		stats.Total++
 		if isBlank(line) {
-			result.Blank++
+			stats.Blank++
 			continue
 		}
-		candidate := extractCandidate(line, format)
-		if candidate == "" {
-			continue
-		}
-		_, err := ParseTimestamp(candidate, format)
-		if err == nil {
-			result.Matched++
+		if format != "" {
+			candidate := extractCandidate(line)
+			if _, err := ParseTimestamp(format, candidate); err == nil {
+				stats.Timestamped++
+			}
 		}
 	}
-	if err := scanner.Err(); err != nil {
-		return result, err
-	}
-	return result, nil
+	return stats, scanner.Err()
 }
 
-// isBlank returns true when line contains only whitespace characters.
-func isBlank(line string) bool {
-	return strings.TrimSpace(line) == ""
+// isBlank reports whether s is empty or contains only whitespace.
+func isBlank(s string) bool {
+	return strings.TrimSpace(s) == ""
 }
