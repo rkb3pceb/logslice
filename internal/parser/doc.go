@@ -1,19 +1,24 @@
-// Package parser provides utilities for detecting and parsing timestamps
-// embedded in structured log lines.
+// Package parser provides utilities for detecting timestamp formats in log
+// files, parsing individual timestamps, scanning log lines into structured
+// representations, and summarising log file metadata.
 //
-// Log files produced by different systems use a wide variety of timestamp
-// formats. This package centralises format detection so that the rest of
-// logslice can work with standard time.Time values regardless of the
-// original source format.
+// # Format Detection
 //
-// Supported formats include:
+// DetectFormat inspects a sample string and returns the Go time layout that
+// best matches the timestamps found within it. DetectFormatFromReader and
+// DetectFormatFromLines offer higher-level helpers that sample multiple lines
+// before deciding on a format.
 //
-//	- RFC 3339 / ISO 8601  (e.g. 2006-01-02T15:04:05Z)
-//	- RFC 3339 with nanoseconds
-//	- Space-separated datetime (e.g. 2006-01-02 15:04:05)
-//	- Apache / nginx combined log format  (e.g. 02/Jan/2006:15:04:05 -0700)
-//	- Syslog-style  (e.g. Jan 02 15:04:05)
+// # Scanning
 //
-// To add support for a new format, append its time.Parse layout string to
-// CommonFormats before calling ParseTimestamp.
+// ScanLines reads an [io.Reader] line-by-line and returns a slice of LogLine
+// values, each carrying the raw text, its 1-based line number, and the parsed
+// timestamp (zero if the line could not be parsed). FilterByRange then narrows
+// that slice to a caller-supplied time window.
+//
+// # Counting and Summarising
+//
+// CountLines counts the log lines that fall within a time range without
+// materialising the full slice. Summarize returns a [Summary] describing the
+// first timestamp, last timestamp, and total line count of a log stream.
 package parser
